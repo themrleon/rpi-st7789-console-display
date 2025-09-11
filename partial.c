@@ -56,7 +56,7 @@ void init_spi(void);
 void init_display(void);
 void write_command(uint8_t cmd);
 void write_data(uint8_t data);
-void write_data_dma(const uint8_t *data, uint32_t len);
+void write_data_len(const uint8_t *data, uint32_t len);
 void set_window(uint16_t x_start, uint16_t y_start, uint16_t x_end, uint16_t y_end);
 int init_gpu_resources(void);
 void display_framebuffer_smart_update(void);
@@ -132,12 +132,12 @@ void write_data(uint8_t data) {
     bcm2835_gpio_write(CS_PIN, HIGH);
 }
 
-// Write multiple data bytes using DMA
-void write_data_dma(const uint8_t *data, uint32_t len) {
+// Write multiple data bytes
+void write_data_len(const uint8_t *data, uint32_t len) {
     bcm2835_gpio_write(DC_PIN, HIGH);
     bcm2835_gpio_write(CS_PIN, LOW);
     
-    // Transfer data using DMA
+    // Transfer data
     bcm2835_spi_writenb((char*)data, len);
     
     bcm2835_gpio_write(CS_PIN, HIGH);
@@ -336,7 +336,7 @@ void update_changed_regions(uint16_t *current_frame, uint16_t *update_mask) {
         if (!region_buffer) {
             // Fallback to full update if memory allocation fails
             set_window(0, 0, WIDTH-1, HEIGHT-1);
-            write_data_dma((uint8_t*)current_frame, DISPLAY_BYTES);
+            write_data_len((uint8_t*)current_frame, DISPLAY_BYTES);
             return;
         }
         
@@ -350,7 +350,7 @@ void update_changed_regions(uint16_t *current_frame, uint16_t *update_mask) {
         }
         
         // Send region data
-        write_data_dma((uint8_t*)region_buffer, region_size * 2);
+        write_data_len((uint8_t*)region_buffer, region_size * 2);
         free(region_buffer);
         
         printf("Partial update: Region %d,%d to %d,%d (%d pixels)\n", 
@@ -358,7 +358,7 @@ void update_changed_regions(uint16_t *current_frame, uint16_t *update_mask) {
     } else if (changed_areas > 0) {
         // Small changes, do full update for simplicity
         set_window(0, 0, WIDTH-1, HEIGHT-1);
-        write_data_dma((uint8_t*)current_frame, DISPLAY_BYTES);
+        write_data_len((uint8_t*)current_frame, DISPLAY_BYTES);
     }
     // Else: no changes, no update needed
 }
@@ -404,7 +404,7 @@ void update_interlaced_regions(uint16_t *current_frame, uint16_t *update_mask) {
         if (!region_buffer) {
             // Fallback to full update if memory allocation fails
             set_window(0, 0, WIDTH-1, HEIGHT-1);
-            write_data_dma((uint8_t*)current_frame, DISPLAY_BYTES);
+            write_data_len((uint8_t*)current_frame, DISPLAY_BYTES);
             return;
         }
         
@@ -418,7 +418,7 @@ void update_interlaced_regions(uint16_t *current_frame, uint16_t *update_mask) {
         }
         
         // Send region data
-        write_data_dma((uint8_t*)region_buffer, region_size * 2);
+        write_data_len((uint8_t*)region_buffer, region_size * 2);
         free(region_buffer);
         
         printf("Interlaced partial update: Region %d,%d to %d,%d (%d pixels)\n", 
@@ -426,7 +426,7 @@ void update_interlaced_regions(uint16_t *current_frame, uint16_t *update_mask) {
     } else if (changed_areas > 0) {
         // Small changes, do full update for simplicity
         set_window(0, 0, WIDTH-1, HEIGHT-1);
-        write_data_dma((uint8_t*)current_frame, DISPLAY_BYTES);
+        write_data_len((uint8_t*)current_frame, DISPLAY_BYTES);
     }
     // Else: no changes, no update needed
     #else
@@ -485,7 +485,7 @@ void display_framebuffer_smart_update(void) {
         if (full_update) {
             // Full screen update
             set_window(0, 0, WIDTH-1, HEIGHT-1);
-            write_data_dma((uint8_t*)current_frame, DISPLAY_BYTES);
+            write_data_len((uint8_t*)current_frame, DISPLAY_BYTES);
             printf("Full update\n");
         } else {
             // Partial update of changed regions

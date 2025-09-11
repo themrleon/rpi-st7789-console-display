@@ -8,7 +8,6 @@ Tools to display the Linux console/framebuffer using a **ST7789 SPI 320x170 1.9"
 * **partial.c**: Less CPU hungry because updates only what changed from the previous frame, usually update screen slower than the `constant` version
 
 Aside from their algorithm difference, both have these same features:
-* Use DMA access
 * Use legacy dispmanx API/driver to leverage GPU
 * Optional show FPS
 * Optional interlaced video
@@ -63,7 +62,7 @@ CS (Chip Select) -> GPIO 8 (SPI0 CE0, Pin 24)
 BL (Backlight)   -> 3.3V (Pin 1)
 ```
 ## Tests
-| Tool | Framebuffer Resolution  | CPU Usage % | doing what? |
+| Tool | Framebuffer Resolution  | Tool CPU Usage % | doing what? |
 | :------------: | :---------------: | :-----: | :-----: |
 | constant | 320x170 | 79-84 | console idle |
 | constant interlaced | 320x170 | 78-84 | console idle |
@@ -107,6 +106,10 @@ I couldn't get an HDMI signal for such small resolution like 320x170, but once I
 ### Is there any performance hit by using a framebuffer/console resolution higher than the display resolution, since it needs to be scale down to fit?
 I haven't noticed any difference in performance, check comparison table above
 
+### What about audio?
+Yes you can use the 3.5mm audio jack or HDMI output:  
+https://github.com/themrleon/rpi-experiments?tab=readme-ov-file#audio
+
 ### If I increase the SPI speed will that increase the display FPS? 
 I tried that and didn't notice any difference, by default it's 32Mhz, for the 320x170 display that seems to be maxed out already, the bottleneck is the Pi CPU itself!
 
@@ -114,9 +117,14 @@ I tried that and didn't notice any difference, by default it's 32Mhz, for the 32
 Make sure to be on the same environment I targeted:
 http://downloads.raspberrypi.com/raspios_oldstable_armhf/images/raspios_oldstable_armhf-2023-05-03/2023-05-03-raspios-buster-armhf.img.xz
 
+### What exactly is the ST7789 model used in this lib code ?
+<img width="516" height="486" alt="image" src="https://github.com/user-attachments/assets/b1c6c09d-ed9e-472c-8325-a1f6194e5a63" />
+
+Some models like this one have an internal framebuffer size bigger than the display resolution, so we have to always compensate that by putting a **35px offset** from the top (idk why they don't simply compensate/abstract that internally to avoid all this hassle for us)
+
 ### Why not using existing solutions?
 I decided to do my own tools since I already spent a huge amount of time without success with:
-* https://github.com/juj/fbcp-ili9341
+* https://github.com/juj/fbcp-ili9341 (edit: got it working later, details [here](https://github.com/themrleon/rpi-experiments?tab=readme-ov-file#st7789-controller))
 * The drivers included in the OS (`fb_st7789v` and `fbtft`)
 ```
 $ modinfo fb_st7789v
@@ -153,3 +161,6 @@ parm:           debug:override device debug level (ulong)
 ```
 * Custom overlays with the drivers mentioned bove
 * Also tried some Python solutions but they ended up all being too slow compared to C
+
+### CPU usage is too high, SPI display solutions are all like that ?
+No, for a far better option, try an **ILI9341** based display with the **fbcp-ili9341** lib, details [here](https://github.com/themrleon/rpi-experiments?tab=readme-ov-file#ili9341-controller)

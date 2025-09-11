@@ -50,7 +50,7 @@ void init_gpio(void);
 void init_spi(void);
 void init_display(void);
 void write_command(uint8_t cmd);
-void write_data_dma(const uint8_t *data, uint32_t len);
+void write_data_len(const uint8_t *data, uint32_t len);
 void set_window(uint16_t x_start, uint16_t y_start, uint16_t x_end, uint16_t y_end);
 int init_dispmanx(void);
 void display_framebuffer_dispmanx(void);
@@ -122,12 +122,12 @@ void write_command(uint8_t cmd) {
     bcm2835_gpio_write(CS_PIN, HIGH);
 }
 
-// Write multiple data bytes using DMA
-void write_data_dma(const uint8_t *data, uint32_t len) {
+// Write multiple data bytes
+void write_data_len(const uint8_t *data, uint32_t len) {
     bcm2835_gpio_write(DC_PIN, HIGH);
     bcm2835_gpio_write(CS_PIN, LOW);
     
-    // Transfer data using DMA
+    // Transfer data
     bcm2835_spi_writenb((char*)data, len);
     
     bcm2835_gpio_write(CS_PIN, HIGH);
@@ -303,7 +303,7 @@ void display_framebuffer_dispmanx(void) {
         apply_interlacing(display_buffer);
         
         // Send data to SPI display
-        write_data_dma((uint8_t*)display_buffer, DISPLAY_SIZE * 2);
+        write_data_len((uint8_t*)display_buffer, DISPLAY_SIZE * 2);
         
         #if SHOW_FPS
         frame_count++;
